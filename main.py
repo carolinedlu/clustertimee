@@ -28,16 +28,9 @@ import seaborn as sns
 from PIL import Image
 from streamlit_modal import Modal
 import streamlit.components.v1 as components
-from fpdf import FPDF
 import base64
-# from io import BytesIO
-# import plotly.io as pio
-# from matplotlib.backends.backend_pdf import PdfPages
-
-
-# img = Image.open('111.jpg')
-# resized_image = img.resize((650, 200))
-# st.image(resized_image)
+from io import BytesIO
+import time
 
 st.markdown("""
         <style>
@@ -50,8 +43,6 @@ st.markdown("""
         </style>
         """, unsafe_allow_html=True)
 _lock = RendererAgg.lock
-
-
 
 def is_valid_number(value):
     try:
@@ -180,7 +171,7 @@ def check_number_of_labels(n_labels, n_samples):
               "Number of labels is %d. Valid values are 2 to n_samples - 1 (inclusive)"
               #             % n_labels
           )
-      
+  
 def cluster(df):
   jumlah_sample = len(df. index)
   raw = df.values.tolist()
@@ -269,7 +260,7 @@ def cluster(df):
     e.append(h)
     e.append(g)
 
-  SNR = range(50,5)
+  SNR = range(50)
   snr = []
   for i in SNR:
     pow = 10**(i/10)
@@ -371,7 +362,7 @@ def cluster(df):
         for g in gain:
           datarate.append(math.log2(1 + (1.8*g*i)/(0.18*g*i + o**2)))
         datarates.append(stat.mean(datarate))
-    traditional.append(stat.mean(datarate)/(jumlah_sample)/2)
+    traditional.append(stat.mean(datarate)/(jumlah_sample/2))
 
   TDMA = []
   # print(pd.DataFrame(trad4, columns = ['x','y','radius','kelompokCluster','kmeansCluster','h','g']))
@@ -446,174 +437,176 @@ def cluster(df):
     plt.ylabel('Sum-rate (bps/Hz)')
     plt.legend(['Modified 1', 'Modified 2', 'Conventional', 'TDMA'])
     st.pyplot(fig1)
-    # Create an in-memory buffer
-    buffer = io.BytesIO()
 
-    # Save the figure as a pdf to the buffer
-    fig1.write_image(file=buffer, format="pdf")
+    buffer = io.BytesIO()
+    plt.tight_layout()
+    plt.savefig(buffer, format='pdf')
+    plt.close(fig1)  # Close the figure to free up resources
 
     # Download the pdf from the buffer
     st.download_button(
         label="Download PDF",
         data=buffer,
-        file_name="figure.pdf",
+        file_name="cluter.pdf",
         mime="application/pdf",
     )
-
   print(modz)
+
+try: 
+  st.markdown("""
+          <style>
+                .block-container {
+                      padding-top: 0rem;
+                      padding-bottom: 0rem;
+                      padding-left: 5rem;
+                      padding-right: 5rem;
+                  }
+          </style>
+          """, unsafe_allow_html=True)
+
+
+  st.title(f"ClusterTime!")
+  st.markdown('<p style="text-align: justify"; color:Black; font-size: 30px;">Its time to Cluster, we will help you clusterize your data or simply choose generate random to see how the program works. The purpose of the program is to clusterize users for NOMA scheme, we aim for the high sumrate score.</p>', unsafe_allow_html=True)
+  st.markdown('<p style="text-align: justify"; color:Black; font-size: 20px;">So, lets get started shall we?</p>', unsafe_allow_html=True)
+
+  selected = option_menu(
+      menu_title=None,
+      # options=["Home","Generate Random","Upload CSV File","How to Use"],
+      options=["Home", "How to Use"],
+      icons=["house-fill","info-circle-fill"],
+      default_index=0,
+      orientation="horizontal",
+      styles={
+          "container": {"padding": "0!important", "background-color": "#eee"},
+          "icon": {"color": "black", "font-size": "18px"}, 
+          "nav-link": {"font-size": "20px", "text-align": "center", "margin":"4px", "--hover-color": "#00000"},
+          "nav-link-selected": {"background-color": "grey"},
+      }
+  )
+
+  if selected == "Home":
+    st.info('Click button below, choose to Upload a File or Generate Random.')
+    # st.selectbox("",('','Upload File','Generate Random'),index=None, placeholder="Select Method...")
+    col1, col2, col3,col4, col5 = st.columns([1,2,1.2, 2, 0.5])
+    col3.subheader("OR")
+    modal = Modal("Upload File", key=123)
+    open_modal = col2.button("Upload File")
+    if open_modal:
+        modal.open()
+
+    if modal.is_open():
+      st.markdown("""
+          <style>
+                .block-container {
+                      padding-top: 1rem;
+                      padding-bottom: 0rem;
+                      padding-left: 5rem;
+                      padding-right: 5rem;
+                  }
+          </style>
+          """, unsafe_allow_html=True)
+      with modal.container():
+        uploaded_file = st.file_uploader(label="Upload your CSV File", type='csv')
+                  
+        if uploaded_file is not None:
+          df = pd.read_csv(uploaded_file) 
+          cluster(df)
+
+
+    modal2 = Modal("Random Generator", key=124)
+    open_modal2 = col4.button("Generate Random")
+    if open_modal2:
+        modal2.open()
+
+    if modal2.is_open():
+      
+      st.markdown("""
+          <style>
+                .block-container {
+                      padding-top: 1rem;
+                      padding-bottom: 0rem;
+                      padding-left: 5rem;
+                      padding-right: 5rem;
+                  }
+          </style>
+          """, unsafe_allow_html=True)
+      with modal2.container():
+        randoms = st.text_input("Generate Random, please insert the number of user: ")
+
+        # Check if the input is a valid number
+        is_valid_input = is_valid_number(randoms)
+
+          # Display a warning message if the input is not a valid number
+        if not is_valid_input or int(randoms)<3 or int(randoms)==0 :
+              alert = st.warning("Please enter a valid number.")
+              time.sleep(3)
+              alert.empty()
   
-st.markdown("""
-        <style>
-               .block-container {
-                    padding-top: 0rem;
-                    padding-bottom: 0rem;
-                    padding-left: 5rem;
-                    padding-right: 5rem;
-                }
-        </style>
-        """, unsafe_allow_html=True)
+        if randoms:
+                            jumlah_sample = int(randoms)
+                            def rand():
+                                return(random.uniform(-10, 10))
 
-# def local_css(file_name):
-#     with open(file_name) as f:
-#         st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
-# local_css("style.css")
-# col1, col2, col3, col4, col5 = st.columns([1, 1, 1, 1, 1])
-st.title(f"ClusterTime!")
-st.markdown('<p style="text-align: justify"; color:Black; font-size: 30px;">Its time to Cluster, we will help you clusterize your data or simply choose generate random to see how the program works. The purpose of the program is to clusterize users for NOMA scheme, we aim for the high sumrate score.</p>', unsafe_allow_html=True)
-st.markdown('<p style="text-align: justify"; color:Black; font-size: 20px;">So, lets get started shall we?</p>', unsafe_allow_html=True)
+                            header = ['x', 'y']
+                            data = []
+                            for i in range(jumlah_sample):
+                                data.append([rand(), rand()])
 
+                            with open('random.csv', 'w', encoding='UTF8', newline='') as f:
+                                writer = csv.writer(f)
 
-selected = option_menu(
-    menu_title=None,
-    # options=["Home","Generate Random","Upload CSV File","How to Use"],
-    options=["Home","How to Use"],
-    icons=["house-fill","info-circle-fill"],
-    default_index=0,
-    orientation="horizontal",
-    styles={
-        "container": {"padding": "0!important", "background-color": "#eee"},
-        "icon": {"color": "black", "font-size": "18px"}, 
-        "nav-link": {"font-size": "20px", "text-align": "center", "margin":"4px", "--hover-color": "#00000"},
-        "nav-link-selected": {"background-color": "grey"},
-    }
-)
+                                # write the header
+                                writer.writerow(header)
 
-if selected == "Home":
-  st.info('Click button below, choose to Upload a File or Generate Random.')
-  # st.selectbox("",('','Upload File','Generate Random'),index=None, placeholder="Select Method...")
-  col1, col2, col3,col4, col5 = st.columns([1,2,1.2, 2, 0.5])
-  col3.subheader("OR")
-  modal = Modal("Upload File", key=123)
-  open_modal = col2.button("Upload File")
-  if open_modal:
-      modal.open()
+                                # write multiple rows
+                                writer.writerows(data)
+                            df = pd.read_csv("random.csv")
+                            cluster(df)
+                          
+          
+  if selected == "How to Use" :
+      st.info('This information shows you how to use this program.')
+      st.markdown("""<style>[data-testid=column]:nth-of-type(1) [data-testid=stVerticalBlock]{gap: 0rem;}</style>""",unsafe_allow_html=True)
+      st.markdown('<p style="text-align: justify"; color:Black; font-size: 20px;">First, there are two ways to use this program. You could choose to upload a CSV file that containing X and Y value as the user position, or you could just click generate random to see how the program work.</p>',unsafe_allow_html=True)
+      st.info('If you choose to upload, please follow the instruction below.')
+      st.image(Image.open('uplot.png'))
+      st.text('1. Choose the "Upload File" Button,')
+      st.text('2. Click "browse file" or drag and drop your file to the area,')
+      st.text('3. Choose your CSV file,')
+      st.text('4. Click "Upload",')
+      st.text('5. Your file has been successfully uploaded!')
+      st.text('6. Wait for the program to process.')
+      st.info('If you choose random generate, please follow the instruction below.')
+      st.image(Image.open('rando.png'))
+      st.text('1. Choose the "Generate Random" Button,')
+      st.text('3. Type in the number of user,')
+      st.text('3. Press enter and wait for the program to process.')
+      
 
-  if modal.is_open():
-    st.markdown("""
-        <style>
-               .block-container {
-                    padding-top: 1rem;
-                    padding-bottom: 0rem;
-                    padding-left: 5rem;
-                    padding-right: 5rem;
-                }
-        </style>
-        """, unsafe_allow_html=True)
-    with modal.container():
-      uploaded_file = st.file_uploader(label="Upload your CSV File", type='csv')
-                
-      if uploaded_file is not None:
-        df = pd.read_csv(uploaded_file) 
-        cluster(df)
+  #hide humburger and watermark
+  hide_streamlit_style = """
+              <style>
+              #MainMenu {visibility: hidden;}
+              footer {visibility: hidden;}
+              </style>
+              """
+  st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 
-  modal2 = Modal("Random Generator", key=124)
-  open_modal2 = col4.button("Generate Random")
-  if open_modal2:
-      modal2.open()
+  #hide link button 
+  st.markdown("""
+      <style>
+      /* Hide the link button */
+      .stApp a:first-child {
+          display: none;
+      }
+      
+      .css-15zrgzn {display: none}
+      .css-eczf16 {display: none}
+      .css-jn99sy {display: none}
+      </style>
+      """, unsafe_allow_html=True)
 
-  if modal2.is_open():
-    
-    st.markdown("""
-        <style>
-               .block-container {
-                    padding-top: 1rem;
-                    padding-bottom: 0rem;
-                    padding-left: 5rem;
-                    padding-right: 5rem;
-                }
-        </style>
-        """, unsafe_allow_html=True)
-    with modal2.container():
-       randoms = st.text_input("Generate Random, please insert the number of user:")
-
-      # Check if the input is a valid number
-       is_valid_input = is_valid_number(randoms)
-
-        # Display a warning message if the input is not a valid number
-       if not is_valid_input or int(randoms)<3:
-            st.warning("Please enter a valid number.")
- 
-       if randoms:
-                          jumlah_sample = int(randoms)
-                          def rand():
-                              return(random.uniform(-10, 10))
-
-                          header = ['x', 'y']
-                          data = []
-                          for i in range(jumlah_sample):
-                              data.append([rand(), rand()])
-
-                          with open('random.csv', 'w', encoding='UTF8', newline='') as f:
-                              writer = csv.writer(f)
-
-                              # write the header
-                              writer.writerow(header)
-
-                              # write multiple rows
-                              writer.writerows(data)
-                          df = pd.read_csv("random.csv")
-                          cluster(df)
-                        
-        
-if selected == "How to Use" :
-     st.info('This information shows you how to use this program.')
-     st.markdown("""<style>[data-testid=column]:nth-of-type(1) [data-testid=stVerticalBlock]{gap: 0rem;}</style>""",unsafe_allow_html=True)
-     st.markdown('<p style="text-align: justify"; color:Black; font-size: 20px;">First, there are two ways to use this program. You could choose to upload a CSV file that containing X and Y value as the user position, or you could just click generate random to see how the program work.</p>',unsafe_allow_html=True)
-     st.info('If you choose to upload, please follow the instruction below.')
-    #  st.markdown('<p style="text-align: justify"; color:Black; font-size: 20px;">If you choose to upload, please follow the instruction below.</p>',unsafe_allow_html=True)
-     st.text('1. Click "browse file" or drag and drop your file to the area')
-     st.image(Image.open('3.png'))
-     st.text('2. Choose your CSV file')
-     st.text('3. Click "Upload"')
-     st.image(Image.open('1.png'))
-     st.text('4. Your file has been successfully uploaded')
-     st.image(Image.open('2.png'))
-     st.info('If you choose random generate, please follow the instruction below.')
-     st.text('1. Click on the "+" or "-" sign or type in the number of user then press enter')
-     st.text('1. Click on the "+" or "-" sign or type in the number of user then press enter')
-     
-
-#hide humburger and watermark
-hide_streamlit_style = """
-            <style>
-            #MainMenu {visibility: hidden;}
-            footer {visibility: hidden;}
-            </style>
-            """
-st.markdown(hide_streamlit_style, unsafe_allow_html=True)
-
-
-#hide link button 
-st.markdown("""
-    <style>
-    /* Hide the link button */
-    .stApp a:first-child {
-        display: none;
-    }
-    
-    .css-15zrgzn {display: none}
-    .css-eczf16 {display: none}
-    .css-jn99sy {display: none}
-    </style>
-    """, unsafe_allow_html=True)
+except Exception as e:
+    # Handle the exception and display a custom error message
+    st.write()
